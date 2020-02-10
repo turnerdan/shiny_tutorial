@@ -1,0 +1,49 @@
+---
+title: "2.3 LAUNCHING A SHINY APP"
+author: Dan Turner (dturner@u.northwestern.edu)
+updated: 2-7-19
+---
+
+## Setup block
+```{r setup}
+# Packages
+library('shiny')         # For building interactive apps
+#library('tidyverse')     # For tidy data wrangling, plotting, etc.
+#library('readr')         # For reading-in data
+library('rsconnect')     # For connecting RStudio to shinyapps.io
+# library(shinythemes)   # For easy visual theming
+# library(lme4)          # For statistical modeling (optional)
+
+# Other setup
+null_server <- function(input, output) { } # Empty server to test different UIs with
+
+```
+
+##############################
+## LAUNCHING YOUR SHINY APP ##
+#############################
+
+Because `shiny` is a web application that displays itself using rendered HTML, it has to be hosted on a server. Servers are just a type of specialized computer, and until now *your computer has been standing in for a server*. That means the apps you made are only visible on your machine. For other people to see it, it has to be hosted on a server connected to the internet. For this, you have two options:
+     
+     A. Host the app on server space that you purchase and manage (Advanced)
+     
+     B. Host the app on [shinyapps.io](http://www.shinyapps.io), which is managed by shiny's creators (RStudio Inc.)
+
+As you might have guessed, it is generally more expensive to pay for shinyapps.io to manage the server than it is to manage your own, but it is fast and easy in comparison. Essentially, once you have executed the code below, it unlocks the ability to publish or deploy the app.
+
+```{r}
+
+# rsconnect needs three bits of information:
+rsconnect::setAccountInfo(name='bias',              # the name of the account on shinyapps.io
+			  token='6C22685696EC3208EC5E74CB3FA779E7',   # the token for your app
+			  secret='<SECRET>')                          # the secret for your token (like a password)
+
+# Push the current app to the shinyapps.io server, using the stored defaults
+deployApp(launch.browser = FALSE)
+```
+			  
+#Once you have configured your rsconnect installation, you can use it to upload applications to shinyapps.io. If you are using the RStudio IDE, you can manage your shinyapps.io account by going to Tools -> Global Options -> Publishing.
+
+
+# deploy the app from the last example, but instead of the raw data it plots the model
+

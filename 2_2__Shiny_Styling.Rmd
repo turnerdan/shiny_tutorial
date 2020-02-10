@@ -1,0 +1,465 @@
+---
+title: "2.2 Shiny Styling and UI"
+author: Dan Turner (dturner@u.northwestern.edu)
+updated: 2-7-19
+---
+
+## Setup block
+```{r setup}
+# Packages
+library(shiny)         # For building interactive apps
+library(tidyverse)     # For tidy data wrangling, plotting, etc.
+library(readr)         # For reading-in data
+library(shinythemes)   # For easy visual theming
+library(lme4)          # For statistical modeling (optional)
+
+# Other setup
+null_server <- function(input, output) { } # Empty server to test different UIs with
+
+```
+
+###################
+## SHINY LAYOUTS ##
+###################
+
+## Our goals: broad strokes
+
+All of the shiny apps we have made so far consist of widgets stacked, one upon the other, in a single column. This type of layout works fine for some purposes, but chances are that you want more control over the visual design of the app.
+
+Luckily, since shiny apps are just fancy HTML pages, and shiny allows you to pass custom HTML to the page building algorithm, there is no limit to the design options you have. It's just a matter of what you want to do, your skills, and shiny's widget selection.
+
+This tutorial is not about HTML, though, it's about shiny. To that end, we will focus on how to arrange the critical components of the app's user interface. Just keep in mind that smaller tweaks are always possible.
+
+## Layouts and panels
+
+One fundamental choice you have is whether the layout you are creating is *fluid* or *fixed*.
+* Fluid elements take the width of their parent element. For example, we have been writing our UI as `ui <- fluidPage(`, which means the app expands width-wise to fill all of the space of the browser window. Likewise, a `fluidRow()` will use all of the horizontal space available to it.
+* Fixed elements are those whose width is predefined. If the browser window is too small to show a fixed element, then scrollbars usually appear, but the element itself is unaffected. 
+
+Shiny has four main types of layouts:
+* `flowLayout()`, which stacks elements from top to bottom, left to right. So, in a wider page, things in a wider page are allowed to be stacked in a row and on narrow pages the same items stack into a column.
+* `verticalLayout()` is the same as a `flowlayout()` with a narrow browser page. Each item is stacked, on on top of the other.
+* `splitLayout()` forces elements to be displayed side-by-side, which is good when you want people to compare left versus right.
+* `sidebarLayout()` is my favorite, because it arranges a main panel and sidebar panel side by side. The sidebar is typically a container for user input and the main panel is where the selection is displayed.
+
+All layouts can contain rows and columns, which can contain other rows and columns. Therefore, you can think of your app layout as a set of elements arranged in a grid. How that grid groups elements, and how it changes depending on the width of the browser window or screen size of the user depends on how you nest your rows and columns, and whether they are fixed or fluid.
+
+*The next code chunk illustrates how fluid layouts work.*
+
+```{r FLUID LAYOUTS, message=FALSE, warning=FALSE, include=FALSE}
+
+ui <- fluidPage(
+  
+  titlePanel("Fluid Layouts"),
+  
+  flowLayout(
+    
+    # Our text
+    h2("This is a FLUID layout that always fills the width of the page."),
+    p("Try making the browser window narrow and see what happens."),
+    
+    # Our other design elements
+    submitButton("Element 1"),
+    submitButton("Element 2"),
+    submitButton("Element 3"),
+    
+    # Let's do a fluidRow too:
+    p("Elements 4-6 are wrapped in a fluidRow, so they will stick together independent of the others."),
+    
+    # fluidRow works like small fluidPage, but you can adjust the width of the columns,
+    fluidRow(
+      column(width = 4, submitButton("Element 4")), # Shiny divides its divisions in 12 parts.
+      column(width = 4, submitButton("Element 5")), # Since I have 3 elements and I want them to be equal width...
+      column(width = 4, submitButton("Element 6"))  # ... I specify width = 4. But, you can space them however you want.
+        
+    ) #/fluidRow
+    
+  )#/flowLayout
+) #/fluidPage
+
+shinyApp(ui = ui, server = null_server)
+
+```
+
+*Compare that to fixed layouts:*
+
+```{r FIXED LAYOUTS, message=FALSE, warning=FALSE, include=FALSE}
+
+ui <- fixedPage(
+  
+  titlePanel("Fixed Layouts"),
+  
+  fixedPanel( # A panel is a way of grouping elements within any context, including pages, rows, and other panels.
+    
+    # Our text
+    h2("This is a FIXED layout with the default width of 940 pixels"),
+    p("Play with the browser window size to see how it flows the elements (or doesn't)."),
+    
+    # Our other design elements, each with a width of 1 so they all fit into one row
+    fixedRow(
+      column(width = 1, submitButton("Element 01")),
+      column(width = 1, submitButton("Element 02")),
+      column(width = 1, submitButton("Element 03")),
+      column(width = 1, submitButton("Element 04")),
+      column(width = 1, submitButton("Element 05")),
+      column(width = 1, submitButton("Element 06")),
+      column(width = 1, submitButton("Element 07")),
+      column(width = 1, submitButton("Element 08")),
+      column(width = 1, submitButton("Element 09")),
+      column(width = 1, submitButton("Element 10")),
+      column(width = 1, submitButton("Element 11")),
+      column(width = 1, submitButton("Element 12"))
+      
+    )#/fixedRow
+  )#/fixedPanel
+) #/fixedPage
+
+shinyApp(ui = ui, server = null_server)
+
+```
+
+## Sidebar layout
+
+I should mention that it is normal to mix fixed and fluid layouts in the same app, but you only have one option for the top-level page. For example, you might want a `fluidPage()` with input widgets that have a fixed width, but keep your plot or datatable fluid to take up the width of the page. This brings us to the `sidebarLayout()` which is a convenient template within shiny that uses one row and two columns, one large fluid one (`mainPanel()`) and one small fixed one (`sidebarPanel()`).
+
+Speaking of panels, HTML pages are rendered from top to bottom and from left to right, and R code is compiled from top to bottom. So, R code that is higher in the UI will appear higher and to the left of lower code.
+
+*In the following chunk you will see the sidebar layout in action again, but with the added example of what happens when you adjust the order of the shiny elements within the page.*
+
+```{r SIDEBAR LAYOUTS, message=FALSE, warning=FALSE, include=FALSE}
+
+ui <- fluidPage( # Let's have a fluidPage, because we want our fluid elements to take up the width of the page.
+  
+    titlePanel("Sidebar Layouts"),
+  
+    h2("sidebarPanel > mainPanel"),
+    p("Because the sidebarPanel precedes mainPanel, it's on the left (where it sticks, whereas the mainPanel expands rightward."),
+    sidebarLayout(
+      
+      sidebarPanel(
+        submitButton("Sidebar Panel")
+      ),
+      
+      mainPanel(
+        submitButton("Main Panel")
+      )
+      
+    ), #?sidebarLayout
+    
+    h2("mainPanel > sidebarPanel"),
+    p("In this case, mainPanel preceds sidebarPanel, so they swap places (sticking the sidebarPanel on the right edge."),
+    sidebarLayout(
+      
+      mainPanel(
+        submitButton("Main Panel")
+      ),
+      
+      sidebarPanel(
+        submitButton("Sidebar Panel")
+      )
+    
+    )#?sidebarLayout
+) #/fluidPage
+
+shinyApp(ui = ui, server = null_server)
+
+```
+
+To sum up the basics so far, shiny arranges everything--text, tables, plots, inputs, pictues, etc.--in rows and columns, the width of which can be fluid or fixed. This means you can lay out your elements on a grid with some confidence that your users will have similar experiences regardless of what kind of device they are using.
+
+###################
+## TABBED LAYOUT ##
+###################
+
+Another way to add dimension to your app is to use tabs to layer panels on top of one another. I think this is a great feature for people that want to show a visualization of their data, but also allow users to dive into the raw numbers. We can do this by using `tabPanel()`, which wraps elements into a tab which can sit under other tabs, allowing the user to switch between views.
+
+*Here is an example of a tabbed view, to give you some idea of the mechanics of this page style:*
+
+```{r TABBED LAYOUTS, message=FALSE, warning=FALSE, include=FALSE}
+
+ui <- fluidPage( # Let's have a fluidPage, because we want our fluid elements to take up the width of the page.
+  
+    titlePanel("Tabbed Layouts"), # title for this page
+
+    sidebarLayout( # use shiny's sidebar layout template
+      
+      sidebarPanel( # this panel is the sidebar. it's narrow and fixed width
+        submitButton("Sidebar Panel"),
+        p("Your inputs here")
+      ),
+      
+      mainPanel(         # this panel is the main panel. it's fluid, so it will be as wide as <window width> - <sidebar>
+        tabsetPanel(     # this is the container object for tabPanels
+          tabPanel("Tab 1",   # this is the text to select the tab
+                   submitButton("Main Panel 1"), # this is the placeholder for content
+                   p("Your plot here")), # this is what I would put on the top tab for most applications
+          
+          # Below as above
+          tabPanel("Tab 2", 
+                   submitButton("Main Panel 2"), 
+                   p("Your model here")), 
+          tabPanel("Tab 3", 
+                   submitButton("Main Panel 3"), 
+                   p("Your raw data here"))
+        )#/tabsetPanel
+        
+      )#/mainPanel
+      
+    ) #/sidebarLayout
+    
+) #/fluidPage
+
+shinyApp(ui = ui, server = null_server)
+
+```
+
+I hope these simplified examples show you what kind of UI designs are possible in shiny. All of the placeholders (`submitButton()`s) here could be text, pictures, tables, plots, and so on. The next section is about styling elements in the layouts, but before we can admire the different looks we can get using `shinythemes`, we should build a working example.
+
+
+
+############################
+## WORKING TABBED EXAMPLE ##
+############################
+
+## About the data
+This dataset gives some basic information for 2410 beers from 510 US breweries. If you run `summary(beers)` you will see there are 63 missing values for `abv` (the alcohol content) and 1005 for `ibu` (the bitterness rating), but the other columns are complete. There is a companion dataset, `breweries` that corresponds to `beers$brewery_id` and contains the name and rough location of the brewery.
+
+*In the following chunk, I will show an example shiny app with a tabbed layout using this dataset.*
+
+```{r TABBED BEERS APP, message=FALSE, warning=FALSE, include=FALSE}
+
+## SETUP
+
+# Import the data
+beers <- read_csv("data/beers.csv")
+breweries <- read_csv("data/breweries.csv")
+
+# Check the beer data
+summary(beers) # Some distributional information about each column
+
+# Join them as brewbeer and drop the original data
+beers <- inner_join(beers, breweries, by = c("brewery_id" = "X1"))
+rm(breweries)
+
+# Wrangle the data
+beers <- beers %>% 
+  drop_na() %>% # drop any rows with NAs
+  select( -c("X1", "id", "brewery_id") ) %>%  # drop these columns
+  rename_at(vars(c("name.x", "name.y")),
+                ~c("beer_name", "brewery_name"))  # rename these columns
+
+# Now we have a dataset worth working with!
+
+## APP
+
+ui <- fluidPage( 
+  
+    titlePanel("Shiny Beer App"), # title for this page
+    
+    shinythemes::themeSelector(), 
+
+    sidebarLayout( # content
+      
+      sidebarPanel( # left sidebar
+        
+          # State selector
+          selectInput(inputId = "state",
+              label = "Select your state",
+              choices = unique(beers$state)),
+          
+          # City selector
+          selectInput(inputId = "city",
+              label = "Select your city",
+              choices = c("All")),
+          
+          # Button to trigger our reactive code
+          submitButton("update", "Search")
+      ),
+      
+      mainPanel(         # content area
+        tabsetPanel(     # container for tabs
+          
+          # Plot counting the distribution of styles
+          tabPanel("Names", plotOutput('plot.names'),
+                   p("This plot shows the distribution of words used in beer names.")),
+      
+          # Plot comparing IBU and ABV
+          tabPanel("Tastes", plotOutput('plot.ibu.abv'),
+                   p("This plot shows the relationship between the bitterness and alcohol content.")),
+          
+          # Table showing raw data
+          tabPanel("Data", 
+                   tableOutput("raw.data"), 
+                   p("Here's an easy way to display your raw data."))
+        )#/tabsetPanel
+      )#/mainPanel
+    ) #/sidebarLayout
+) #/fluidPage
+
+server <- function(input, output, session) {
+  
+  # Reactive wrapper to narrow the city list according to the 'state' dropdown
+  cityByState <- reactive({
+    c( "All", unique(beers$city[beers$state == input$state]) ) # Add option for "All" before the city list, by state
+  })
+
+  # This observer pushes the update from cityByState to the 'city' dropdown
+  observe({
+    updateSelectInput(session, "city", 
+                      label = "Select your city", 
+                      choices = cityByState())
+  })
+  
+  # Filter the data according to the user input
+  selectedData <- reactive({
+
+    # Filter by city, if "All" not selected
+    if (input$city == "All"){
+      beers %>% filter( state == input$state ) # ONLY filter by state
+      
+    } else {
+      
+      # Otherwise, sort by the state AND city
+      beers %>% 
+        filter( state == input$state ) %>% # Filter by state
+        filter( city == input$city )#  THEN filter by city
+      
+    } #/conditional for 'all'
+    
+  })
+
+  # Let's make a plot about the beer tastes
+  output$plot.ibu.abv<- renderPlot({
+    
+    ggplot(selectedData(), aes(x = abv, y = ibu) ) +
+    geom_point() +    
+    ggtitle(label = "Alcohol-Bitterness Profiles")  # a title for the plot
+    
+  })
+  
+  # Let's make a plot about the beer names
+  output$plot.names <- renderPlot({
+    
+    ## A little code to get the frequency of the words in the beer names
+
+    top_n_words <- 10 # including ties
+
+    beer_name_freq <- str_split(selectedData()$beer_name, " ") # split all the beer names around spaces
+    beer_name_freq <- tolower(unlist(beer_name_freq)) # we want to collapse the list of words bbeer_name_freq item to one big list
+    beer_name_freq <- gsub("[^[:alpha:] ]", "", beer_name_freq) # remove non-alphabetical characters
+    beer_name_freq <- as.data.frame ( table(beer_name_freq) ) # table gets the frequencbeer_name_freq of each word
+    beer_name_freq <- beer_name_freq %>% slice(-1) %>% top_n( top_n_words )
+    
+    # Time to plot it
+    ggplot(beer_name_freq, aes(x = beer_name_freq, y = Freq) ) +                
+    geom_bar(stat="identity") +                                        # this will be a histogram
+    ggtitle(label = "Top words in beer names")  # a title for the plot
+    
+  })
+  
+    # Make and render the data table
+  output$raw.data<- renderTable({selectedData()})
+
+} #/server
+
+shinyApp(ui = ui, server = server)     # Put it all together
+
+```
+
+
+Now that we have something that works, let's make it look great!
+
+
+##################
+## SHINY THEMES ##
+##################
+
+As I mentioned above, the possibilities for styling shiny apps are almost endless, since they are rendered HTML pages. What I did not mention before is that they can also be styled with CSS, a type of file that lets you fine-tune the themes of the app. This is not a tutorial in writing HTML or CSS, though, so we will use a package called `shinythemes` to apply some instant style on shiny.
+
+One nice feature of `shinythemes` is that it can easilly generate its own theme selection interface. To see it in action, add `shinythemes::themeSelector(),` under the `titlePanel()` and try a few options. If you want to apply a certain theme to an app, you can just include `theme = shinytheme("my_theme"),` as the first line of your `ui`. 
+
+Incorporating a `shinythemes` theme will be a part of the next coding challenge.
+
+########################################
+## CODE IT ## ONLINE CLOTHING REVIWES ##
+########################################
+
+For this app, let's continue with the product theme set by the `beers` data. 
+
+## About the data
+This dataset was an internal dataset compiled by an anonymous retailer, which was anonymized and released. It contains about 23k reviews of women's clothing with 11 variables, like the reviewer's age, a unique product ID, and their rating. You can learn more herre: https://www.kaggle.com/nicapotato/womens-ecommerce-clothing-reviews
+
+## What to do
+You job with this task is to explore the relationship between two kinds of measures of recommendation: whether the customer recommends the product (Recommended IND) and how highly the customer rates the product. Sometimes the customer rates a product high, but doesn't recommend it. Sometimes the oppposite! Your job is to use this data to build a shiny solution that explores these mismatches.
+
+*To get you started,* I wrote a suggested data wrangling `dplyr` function that normalizes the column names, bins the respondents by age (based on the sample population), and summarizes the mean rating and whether it was recommended, by department name and age:
+
+```{r CLOTHING REVIEWS, message=FALSE, warning=FALSE, include=FALSE}
+
+# Import the data
+reviews <- as.data.frame( read_csv("data/Womens Clothing E-Commerce Reviews.csv") )  
+
+# Add a column for the word count, just for fun
+reviews$Review.Length <- sapply(strsplit(reviews$`Review Text`, " "), length) # this works by splitting the text at spaces and counting the parts
+
+# Data wrangling
+reviews.grouped <- reviews %>%
+  rename_all(list(~make.names(.))) %>%  # replace tidy-unfriendly spaces with periods
+  mutate(ageCat=cut_number(Age, n = 3, labels = c("younger", "middle", "older"))) %>% # bin ages in three equal categories 
+  group_by(Department.Name, Class.Name, ageCat) %>%  # group by these factors
+  summarize(meanRating = mean(Rating),            # Summarize the rating...
+            meanReccom = mean(Recommended.IND),   #...and the recommendation boolean...
+            meanLength = mean(Review.Length)      #...and the word count of the Review.Text
+  ) %>% #/summarize
+  na.omit() # strike NA's
+
+## The Plan
+# This task is about two kinds of preference, a boolean recommendation and a scalar recommendation.
+#    -Since our two measures of interest are continuous, let's use a scatterplot of meanRecomm and meanRating.
+#    -Since we always have threee age groups, we can facet by age, so there will be 3 plots per view, plus one combined.
+#    -To let the user look for trends, we will let them group by Department.Name, and Class.Name.
+
+# UI
+# SERVER
+# Call shinyApp()
+
+```
+
+*Good luck!*
+
+If you get stuck, consider checking out my sample solution, called `2_2__Solution__Reviews`.
+
+## Extra challenge: showing statistical model summaries
+In case you want an extra challenge, you might want to try showing statistical model results in shiny. You can even use shiny to fit and display new models on demand! Below is an example model for the ungrouped data that tries to predict whether each review results in a summary recommendation by the reviewer, or not. It takes a little time to run, so I have loaded a prefit model into the `/data/` directory. 
+
+*Brainstorm ways of showing statistical model summaries in shiny.*
+
+In case you want to try out your ideas, I built a maximalist (but poor) model using the code below. It took a significant amount of time to run, so I saved the results in /data/, which you can load with the last line in the code chunk. Have fun!
+
+```{r CLOTHING REVIEW MODEL, message=FALSE, warning=FALSE, include=FALSE}
+
+# Build a mixed effects regression model using lme4, just for fun 
+
+# # Data wrangling
+# reviewsForModel <- reviews %>%            
+#   mutate(sc.age = scale(Age)) %>%
+#   mutate(sc.rate = scale(Rating)) %>%
+#   mutate(sc.len = scale(Review.Length))
+# 
+# # Fit the model
+# m <- glmer(reviews$`Recommended IND` ~  # predict whether the review is a recommendation
+#              sc.age * sc.rate * sc.len * `Division Name` * `Department Name` * `Class Name` +
+#              `Clothing ID` +
+#              (1 | `Clothing ID`), # our random effect is the specific product
+#            data = reviewsForModel, family = binomial, # use a binomial model and the non-summarized dataset
+#            control=glmerControl(optimizer = "nloptwrap")) # use a faster optimizer
+#
+# # Write the results
+# results <- broom::tidy(m) # use the broom package (in tidyverse) to write the results to a dataframe
+# write_rds(results, "data/m_prefit.rds") # saving the model so you don't have to run it.
+
+m <- read_rds("data/m_prefit.rds") # Load the model output as 'm'
+
+```
+
+## NEXT: LAUNCHING A SHINY APP

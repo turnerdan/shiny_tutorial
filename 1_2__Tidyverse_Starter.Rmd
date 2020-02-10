@@ -1,0 +1,172 @@
+---
+title: "1.2 Tidyverse Starter"
+author: Dan Turner (dturner@u.northwestern.edu)
+updated: 2-9-19
+---
+
+Because of the way we will be filtering and plotting our data, it is advantageous to use `tidyverse` style R code, which looks a little different than "base" R code. Mainly, we want to use `magrittr`'s pipe operator, `>%>`, and `dplyr`'s functions tomanipulate the data based on user input.
+
+
+
+*In the following code chunk, you will load the tidyverse list its packages.*
+```{r setup}
+knitr::opts_chunk$set(
+	echo = FALSE,
+	message = TRUE,
+	warning = FALSE
+)
+## Setup
+library(tidyverse)  # load tidyverse
+
+# Check what packages are installed from the tidyverse
+tidyverse_sitrep()
+
+```
+
+Quick tip: if any of the packages in `tidyverse` are out of date, you can run `tidyverse_update(recursive = TRUE)` to get a ready-to-go command to install all of the updates. This is probably not necesary for this turtorial, though.
+
+**In the next section, we review the Tidyverse packages**
+
+## Tidyverse packages 
+
+### Packages we will use in this shiny tutorial
+* magrittr (operators for mapping data flow)
+https://github.com/tidyverse/magrittr
+
+* dplyr (all about data transformations)
+https://github.com/rstudio/cheatsheets/blob/master/data-transformation.pdf
+
+* ggplot2 (all about plotting)
+https://github.com/rstudio/cheatsheets/blob/master/strings.pdf
+
+* readr (all about reading flat files, like csv's)
+https://github.com/rstudio/cheatsheets/blob/master/data-import.pdf
+
+* stringr (all about string manipulations)
+https://github.com/rstudio/cheatsheets/blob/master/strings.pdf
+
+* lubridate (all about handling dates and times)
+https://rawgit.com/rstudio/cheatsheets/master/lubridate.pdf
+
+
+### Other packages you might recognize, related to tidyverse
+* purr (all about functional programming)
+* hms (classes for handling dates and times)
+* tidyr (functions for dataframe pitvoting, rectangling, nesting, etc.)
+* tibble (a tidy style data frame)
+* modelr (for modeling)
+* broom (for extracting model data)
+* rvest (for web scraping)
+* forcats (for factors)
+* haven (for SPSS, SAS, and Sata files)
+
+See the full list here: https://www.tidyverse.org/packages/
+
+## Quick tidyverse walkthrough
+
+Next we get some practice in the tidyverse in terms of data wrangling. In `data/` there are two files, `cats.csv` and `dogs.csv` which are public domain databases that contain characteristics about cat and dog breeds. We will try to follow the tidy data guidelines, which means to have all variables as columns, all observations as rows, and each cell should have one and only one value.
+
+**In the code chunk below, we load and merge these data using three dplyr functions/"verbs", 'mutate', 'rename' and 'full_join':**
+
+```{r IMPORT AND MERGE}
+# Import the cat datasets using readr as tibbles
+cats <- as_tibble( read_csv("data/cats.csv") )
+dogs <- as_tibble( read_csv("data/dogs.csv") )
+
+# Work on the individual datasets to make them merge with less work
+cats <- cats %>% 
+  mutate(animal = "cat") %>% # MUTATE * add a column named "animal" with the value "cat"
+  rename(price = AvgKittenPrice)# %>% # RENAME * rename the column "AvgKittenPrice" to "price"
+  
+dogs <- dogs %>% 
+  mutate(animal = "dog") %>% # add a column named "animal" with the value "dog"
+  rename(price = AvgPupPrice) #%>% # rename the column "AvgPupPrice" to "price"
+
+# full_join() is one of 7 different options to merge tibbles using dplyr
+pets <- cats %>% full_join(dogs) # FULL_JOIN * by default, it will join across all columns which have shared names across the datasets
+
+# Show the first 5 rows of pets
+head(pets, 5)
+
+# Save this to the data folder as pets
+# saveRDS(pets, "data/pets.rds") # I did this for you
+
+```
+
+### Quick question for you:
+* Now the dataset is rectangular, but it still isn't tidy. Why?
+* What could you do to make it tidy?
+
+
+**Next we will explore the data using three more dplyr verbs.**
+
+Which animal is more expensive?
+```{r GROUP AND SUMMARIZE}
+pets %>% # take the pets object
+  group_by(animal) %>% # # group all rows accourding to their value in this column
+  summarize(mean = mean(na.omit(price)), # summarize the rows in each group, first by getting the mean price as 'mean'
+            count = n()) # ...and second, by getting getting the count of rows in each group as 'count'
+```
+
+Often you want to only include certain rows in your analysis, and so you have to filter out some rows based on their values. For this kind of task, you can use the verb 'filter':
+
+```{r FILTER 1 of 3}
+## What are the 3 most popular breeds of pet, ACROSS cats and dogs?
+pets %>% 
+  filter(MaleWtKg >= 1) %>% # filter out any pets that do not meet this criteria
+  top_n(3, PopularityUS2017) # get the top 3 most popular pets in the database
+```
+```{r FILTER 2 of 3}
+## What are the 3 most popular breeds of pet, WITHIN cats and dogs?
+pets %>% 
+  filter(MaleWtKg >= 1) %>% # filter out any pets that do not meet this criteria
+  group_by(animal) %>% # group cats with cats and dogs with dogs 
+  top_n(3, PopularityUS2017) # get the top 3 most popular from each group
+```
+
+You can subset columns using the "select" verb:
+
+```{r SELECT}
+pets %>% select(price, PopularityUS2017) # This will select only the Fur column
+```
+
+```{r FILTER 3 of 3}
+## What are the most popular cats and dogs, in terms of percentile?
+pets %>% 
+  filter(MaleWtKg >= 1) %>% # filter out any pets that do not meet this criteria
+  group_by(animal) %>% # group cats with cats and dogs with dogs 
+  top_frac(.05, PopularityUS2017) # get the top 5% most popular 
+```
+
+Great! Let's write this new dataset 
+
+#######################
+## CODE IT TIDYVERSE ##
+#######################
+
+What is the price of the most popular dog smaller than a lapcat?
+```{r}
+
+pets %>% 
+  select(... # start by selecting the columns you need
+
+```
+
+Make a table showing the average price of cat by fur type (bald, shorthair, medium, longhair).
+
+```{r}
+
+pets %>% 
+  filter(... # start by filtering out the dogs
+
+```
+
+
+##################################
+## CODE IT ## BONUS: TIDY IT UP ##
+##################################
+
+If you want an extra challenge, use `stringr` to split the `pets$Temperments` column so every attribute is its own string. Then, make a new column for every attribute, and for every cell in those columns let the value be TRUE if that attribute appears for that breed, otherwise FALSE. There is not a way to do this completely within the tidyverse that I know of, so feel free to take it on however you can!
+
+
+## NEXT: A BRIEF GGPLOT2 STARTER

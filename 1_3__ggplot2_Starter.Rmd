@@ -1,0 +1,85 @@
+---
+title: "1.3 ggplot2 Starter"
+author: Dan Turner (dturner@u.northwestern.edu)
+updated: 2-10-19
+---
+
+Now we will look at how to plot using **ggplot2**, a common package for making all kinds of plots, charts and graphs. Like **shiny**, its style is a little different than normal R, and so we will take a little while to get a taste for it. After this section, we will jump into implementing ggplot plots within shiny.
+
+
+```{r setup, message=FALSE, warning=FALSE}
+
+# Libraries
+library(tidyverse)  # load tidyverse
+
+# Data
+pets <- read_rds("data/pets.rds") # pets dataset from tidyverse starter
+
+```
+
+##############################
+## GRAMMAR OF GRAPHICS (GG) ##
+##############################
+
+**ggplot2** is the standard plotting package, but its syntax is a little complicated. Take alook at the code chunk below; you will see the `ggplot()` function containing the datset and `aes()`--this means aesthetic. 
+
+`aes()` controls what variables map onto what visual features or dimensions of the plot. Note this doesn't tell `ggplot` what to do with the data and variables. That's the job of `geom_histogram()`, which does the job of tallying each observation on the x axis and creates a bar plot automatically. Lastly, the function `facet_wrap()` does the job of subsetting our data by animal, so we will have companion plots for dogs and cats. Note that all of these functions are connected with the plus sign (`+`), which is ideosyncratic to ggplot2.
+
+There are too many types of plots to list here, but this is the general anatomy of a ggplot2 object. 
+
+**In the following code chunk, we make a histogram of weights, grouped by animal type.**
+```{r HISTOGRAM, message=FALSE, warning=FALSE}
+
+# Read-in the pets dataset from the tidyverse starter
+pets <- read_rds("data/pets.rds")
+
+ggplot(pets, aes(x = MaleWtKg)) + # plot with weight on the x axis; y axis will be count
+  ggtitle("Distribution of Animal Weights") + # a title for this plot
+  geom_histogram(bins = 30) + # plot it as a histogram (count of x axis obserevations)
+  facet_wrap(~animal) # group by animal
+
+```
+
+For `geom_histogram()` to work, there has to be a binsize of the continuous variable on the x-axis. The binsize determines what weights we count together, and therefore how many bars in the histogram we will see. For example if the bin count is one, you would have one wide bar with a count equal to the total number of observations. You can try this by adding `bins = 1` within `geom_histogram()`.
+
+**Now let's try making a scatter plot to observe the relationship between two continuous measures, price and weight.**
+
+```{r SCATTER-RAW, message=FALSE, warning=FALSE}
+
+ggplot(pets, aes(y = MaleWtKg,          # weight on the y axis
+                 x = PopularityUS2017,  # popularity on the x axis
+                 color = animal)) +     # color by value of $animal
+  ggtitle("Pet Popularity vs Weight") + # a title for this plot
+  geom_point() # show a scatter plot
+
+```
+
+As you can see, it's easy to get a very different look with some minor changes. Instead of faceting by animal, we can just color the dots of the scatterplot by animal. Keep in mind we are still mostly working with the default settings of these functions; you can customize the *shape, size, color pallet, axes, axes titles, key, background, size, resolution, grid pattern, tick marks, tick intervals, and much more,* just by appending more functions with plus signs.
+
+We can also see by this plot that there is a big discrepency in our data about the relative popularity of cats versus dogs. This suggests that the popularity data from one animal cannot readily be compared to the other. Luckily, we know how to solve this type of problem, and implementing the change is fast and clean using tidyverse code. 
+
+The next coding challenge combines what we have covered so far.
+
+
+**In the next code challenge, we create a new variable, 'scaled_pop', that contains the relative popularity (scaled and centered) of each breed within each animal. This will make it possible to compare popularity across animals.**
+
+###############################
+## CODE IT ## SCALED SCATTER ##
+###############################
+
+Your job is to create a new column in 'pets' called 'scaled_pop', which should contain the scaled and centered value of 'PopularityUS2017', obtained through the `scale()` function. Make sure cat rows are scaled relative to cats, and dogs to dogs.
+
+Part 2. Then, create a scatter plot with the title "Scaled popularity vs. weight", with weight on the y-axis and scaled_pop on the x-axis, color coded by animal.
+
+```{r SCATTER-SCALED, message=FALSE, warning=FALSE}
+
+# Create new column in pets for scaled_pop
+
+# Create a scatter plot comparing weight to scaled_pop
+
+```
+
+If you want to see my solutuion, I saved it to the root directory.
+
+
+## NEXT: SHINY WORKFLOW

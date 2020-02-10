@@ -1,0 +1,40 @@
+---
+title: "1.1 Setup"
+author: Dan Turner (dturner@u.northwestern.edu)
+updated: 2-9-19
+---
+
+**Welcome to my tutorial on Shiny, a popular package for creating web applications that run on R code!**
+
+Because of the structure of Shiny, I found it better to show off its capabilities using R Notebooks like this one. You will see that text (like this) can be set inline with code chunks...
+```{r}
+# ...like this.
+```
+
+Code chunks are run by pressing the *Run* button while the curser is in that code chunk, or by the key combination *Cmd+Shift+Enter*. Each code chunk behaves kind of like an isolated `.R` script file, but the results appear beneath the code chunk, instead of in the console.
+
+*Try it out with the code chunk below.*
+
+```{r RUN THIS}
+songs <- read_csv("data/fight-songs.csv")  # Load a dataset
+plot( sort( songs$sec_duration ) )         # Plot in ascending order
+```
+
+The plot above shows the length of 65 college fight songs in the US. If there was an error, you should make sure your working directory is set to the `shiny/` directory.
+
+*Lastly, we will make sure your machine as all of the packages we will be using. Run the following chunk:*
+```{r INSTALL PACKAGES}
+
+# This script compares the required packages with what's installed.
+# If any required packages are not installed, it installs them and their dependencies.
+list.of.packages = c("shiny", "tidyverse", "readr", "plotly", "shinythemes", "lme4", "rsconnect")
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages)) install.packages(new.packages, dependencies = TRUE)
+
+```
+
+Once all of the packages are installed (if applicable) we are ready to begin!
+
+## NEXT: BRIEF STARTER ON TIDYVERSE
+
+*This tutorial is liscensed under https://creativecommons.org/licenses/by-sa/3.0/*

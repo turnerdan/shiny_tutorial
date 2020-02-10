@@ -1,0 +1,346 @@
+---
+title: "2.1 Shiny Demo & Workflow"
+author: Dan Turner (dturner@u.northwestern.edu)
+updated: 2-7-19
+---
+
+
+## Let's get shiny!
+
+This notebook is all about the `shiny` workflow.
+
+It provides a general anatomy of shiny applications and a guide with best practices for building them.
+
+Let's start with an example of a simple app that takes and input (a name) and displays an output (a greeting).
+
+
+## About the data
+
+This data contains the fight songs from some large American universitites, including Northwestern. Fight songs are a kind of song for fans at college games. It comes from fivethirtyeight.com: [Our Guide To The Exuberant Nonsense Of College Fight Songs](https://projects.fivethirtyeight.com/college-fight-song-lyrics/) from [here](https://github.com/fivethirtyeight/data/tree/master/fight-songs)
+
+Reminder: To run a chunk, click the *Run* button within the chunk or place your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+
+## Setup block
+```{r setup}
+# Packages
+library(shiny)     # For building interactive apps
+library(tidyverse) # For tidy data wrangling, plotting, etc.
+library(readr)     # For reading-in data
+library(DT)        # For reactive tables
+library(plotly)    # For reactive plots
+
+# Let's import the fight song data...
+fight_songs <- as.data.frame( read_csv("data/fight-songs.csv") )
+
+# ...and take a look at it:
+head(fight_songs)
+```
+
+
+#######################
+## SIMPLE SHINY DEMO ##
+#######################
+
+## What is the relationship between the year a fight song was written, and its duration, by conference?
+
+This data can answer this question, and we can build an app to explore it using *shiny*.
+
+The following code chunk is densely commented to show all the steps line-by-line for how this app works, but the short version is this: we feed the user interface data from `R` in response to the user's input.
+
+1. The user inputs their choice of conference (a group of schools that competes) with a dropdown menu, then shiny passes that choice to the shiny server.
+2. The server takes the user input and returns an output. In this case, the input subsets a part of the dataset, and the server returns a plot.
+
+Scripts that take an input and return an output interactively are called 'reactive', and it involves a special trick of shiny's. Look for the curly brackets -- shiny uses these to define reactive portions of the code.
+
+Read the following chunk and comments...
+
+```{r Fight Songs 1, message=FALSE, warning=FALSE, include=FALSE}
+
+## The first half of every shiny app is the user interface -- the ui. It's what the user sees:
+
+# fluidPage() makes a page based on rows and columns, and it increases in width to fill the page.
+# fixedPage() is its fixed-width counterpart.
+ui <- fluidPage(
+  
+  titlePanel("Fight Songs Visualization 1"),
+  
+  # selectInput() makes a dropdown menu and feeds the choice to the server. It needs:
+  #      an inputId (which will save it as input$inputId
+  #      a label that prints text over the dropdown
+  #      a vector of choies that will populate the menu
+  #      'selected' is optional, and is the default selection on the dropdown. Other input types require defaults, like sliderInput()
+  selectInput(inputId = "conf", 
+              label = "Select a conference", 
+              selected = "Big Ten", 
+              choices = unique(fight_songs$conference)),
+
+  # plotOutput displays a ggplot to the user, in this case the one saved to output$the.plot
+  plotOutput("the.plot"),
+  
+  # Update the page (e.g. refresh the server with new input) when the user presses "Go"
+  actionButton("update", "Go")
+  
+)
+
+## The second half of every shiny app is the shiny server, which feeds data to the UI.
+
+# server is defined as a function that takes an input and displays an output.
+server <- function(input, output) {
+
+  # We subset the data with dplyr and refresh it when the user presses the update button, "Go"
+  # Because this responds to user input, it has to be wrapped in a reactive shell, defined by curly brackets
+  selectedData <- eventReactive(input$update,{ 
+    fight_songs %>% 
+      mutate(isNU = school == "Northwestern") %>% # Just for fun, let's create a column to make NU easier to find
+      filter(conference == paste0(input$conf)) # Here is where we bring in the user input for conference
+    })
+  
+  # Output is returned by the server -- in this case it will return a plot
+  output$the.plot <- renderPlot({
+    
+    # Our plot will use the selectedData from above and plot years on the x axis and duration on the y as a scatter plot
+    ggplot(data = selectedData(), aes(x = year,          # year on the x axis
+                                      y = sec_duration,  # duration on the y axis
+                                      color = isNU)) +   # special color for NU in the plot
+      geom_point(aes(shape=official_song), size = 10)    # spoecial shapes based on whether it's official
+    })
+  
+}
+
+shinyApp(ui = ui, server = server)
+```
+
+
+####################
+## SHINY WORKFLOW ##
+####################
+
+The general workflow for shiny creation is:
+
+1. Build the skeleton of the UI ("What are people going to see and input?")
+2. Build the skeleton of the server ("What are the building blocks of the output?")
+3. Adjust the layout of the UI
+4. Adjust the behavior of the server
+
+Let's talk about each piece in turn.
+
+
+##############
+## SHINY UI ##
+##############
+
+Shiny allows users to enter many types of data, which means it is possible for us to manipulate our data in many ways. In fact, shiny's ability to manage data for the user is probably its best asset. Find a 'gallery' of input UI's here: https://shiny.rstudio.com/gallery/widget-gallery.html
+
+*The following code chunk shows some of the options you have as a shiny programmer for harnessing user input.*
+
+```{r UI, message=FALSE, warning=FALSE, include=FALSE}
+ui <- fluidPage(
+  
+  # A title for our page
+  titlePanel("Common input types"),
+  
+  # Dropdown menu
+  selectInput(inputId = "conf", 
+              label = "selectInput", 
+              selected = "Big Ten", # This default value is not required
+              choices = unique(fight_songs$conference)),
+    
+  # Numeric input
+  numericInput(inputId = "number", 
+            label = "tnumericInput",
+            value = 123),
+
+  # Slider selector
+  sliderInput(inputId = "year", 
+              label = "sliderInput", 
+              min = 1893, 
+              max = 1968, 
+              value = 1905), # This default value is required
+  
+  # Text input
+  textInput(inputId = "text", 
+            label = "textInput"),
+
+  # Check box input
+  checkboxInput(inputId = "check", 
+            label = "checkboxInput",
+            value = TRUE),
+  
+  # There is also a checkboxGroupInput option, and a radioButtons option.
+  
+  # Date input
+  dateInput(inputId = "date", 
+            label = "dateInput"),
+  
+  # There is also a dateRangeInput option
+    
+  # File input
+  fileInput(inputId = "file", 
+            label = "fileInput",
+            accept = c(".none"))
+  
+  # We will talk about the output next
+  )
+
+shinyApp(ui = ui, server = server)
+```
+
+
+
+##################
+## SHINY SERVER ##
+##################
+
+To display your data in the UI, two things need to happen:
+
+1. The data has to be rendered             e.g. `renderXYZ()`
+2. The rendered data has to be output      e.g. `XYZoutput()`
+
+Here, 'output' means to display the data in whatever form it may be. This two-step process is equally true for text (`renderText()` --> `textOutput()`), tables (`renderTable()` -> `tableOutput()`), and other output types you will see in the next section.
+
+Recall that the server has two arguments: input and output. User input coming into shiny from the UI is labeled `input$inputId`, where the inputId is the argument of inputId in the input function (ala numericInput(inputId = "this")). This is very similar to the system for outputs. Everything you render is assigned to `output$outputId`. 
+
+For example, in the following expression...
+
+`server <- function(input, output, session) {`
+`  output$example <- renderText({paste(input$greet, input$name)})`
+`}`
+
+...the output of `renderText()` would be accessible as `textOutput("example")`.
+
+In the next code chunk, you will see a variety of example output recipes.
+
+```{r SERVER, message=FALSE, warning=FALSE, include=FALSE}
+
+# A bare bones UI with no user input
+ui <- fluidPage(
+  
+  # plotOutput displays a ggplot
+  HTML("<h2>Normal Plot</h2>"), # You can render custom HTML like this
+  # ^^^ is the same as h2(
+  # Most common HTML tags are conveniently coded as R functions for shiny
+  plotOutput("the.plot"),
+  
+  # Now for an interactive table
+  h2("Interactive Plot(ly)"),
+  plotly::plotlyOutput("the.plotly"),
+
+  # Standard tables
+  h2("Normal Table"),
+  tableOutput("the.table"),
+  
+  # Data table (interactive)
+  HTML("Interactive (Data)Table<"),
+  DT::DTOutput("the.datatable")
+  
+) #/ui
+
+
+# server is defined as a function that takes an input and displays an output.
+server <- function(input, output) {
+
+  # renderPlot renders ggplots to the UI output variable
+  
+  # First we make the ggplot, because we will reuse it in a moment
+  gg <- ggplot(data = fight_songs, aes(x = year ), stat = "count") +   # special color for NU in the plot
+      geom_bar() + # this will be a histogram
+      ggtitle(label = "# Fight Songs Written by year") # a title for the plot
+  
+  output$the.plot <- renderPlot({
+    gg # the plot
+    })
+  
+    # Now let's do a data table
+  output$the.plotly <- renderPlotly({
+    
+    # Coerce fight_sounds into a leaflet
+    
+    plot_ly(fight_songs, x = ~year,  type = "histogram")
+    
+  })
+  
+  # renderTable renders a normal table to the UI output variable
+  output$the.table <- renderTable({
+    
+    # Shiny requires it to be an xtable object
+    xtable::xtable(fight_songs)
+    })
+  
+  # Now let's do a data table
+  output$the.datatable <- renderDT({
+    
+    # Coerce fight_sounds into a datatable
+    datatable(fight_songs)
+  })
+  
+  
+  
+} #/server
+
+shinyApp(ui = ui, server = server)
+
+
+```
+
+
+While we are not working with any geographic information (at least not yet), we could also show *interactive map data* in shiny, using the package `leaflet`.
+
+################################
+## CODE IT ## STATIC DATA VIS ##
+################################
+
+Your job in this exercise is to create a working shiny app. It should address a question that can be visualized using the data and functions mentioned thus far. For now, do not make it interactive; it should only have a title and outputs in the UI. Here are some sample questions -- CHOOSE ONE:
+
+A. What is the relationship to the count of "fight" and the song duration? How about BPM?
+      Suggestion: A scatterplot comparing `$number_fights` and `$sec_duration` or `$bpm`.
+      -Consider transforming `sec_duration` into log scale using `ggplot2::scale_y_log10()`.
+
+B. 
+
+
+##################################
+## CODE IT ## REACTIVE DATA VIS ##
+##################################
+
+## About this data (inspired by a story on fivethirtyeight)
+This dataset gives a daily breakdown of births in the US from 1994 to 2014. It comes from two agencies, the Social Security Administration and the Center for Disease Control, and so we have to separate files with redundant information. So, some assembly is required.
+
+Below is most of the data wrangling needed for this app, but it needs a little bit of modification to work.
+
+Read the code and comments, and modify the code to pool birth numbers within each month and day ()
+
+```{r BABY LUCK, message=FALSE, warning=FALSE, include=FALSE}
+
+# Import the CSV files with the raw data
+
+US_births_2000_2014_SSA <- read_csv("data/US_births_2000-2014_SSA.csv")
+US_births_1994_2003_CDC_NCHS <- read_csv("data/US_births_1994-2003_CDC_NCHS.csv")
+
+# INSTRUCTIONS: MODIFY "..." BELOW TO POOL BIRTHS ACROSS THE YEARS, SO WE HAVE THE BABY TOTAL BY MONTH AND DAY
+
+# Set up our data frame with the combined data, without duplicate years
+births <- US_births_1994_2003_CDC_NCHS %>%   # Start with the older data
+  filter( year < 2000 ) %>%                  # Subtract duplicate years from smaller set
+  bind_rows( US_births_2000_2014_SSA ) %>%   # Append the later data. Works just like rbind() in base R
+  mutate( weekday = weekdays( as.Date( paste0( year, "-", month, "-", date_of_month ) ) ) )  %>% # Weekday name (i.e. Sunday)
+  group_by( ... ) %>% # Pool the data in such a way that we look at the weekday name, month date and year (i.e. Friday 13 1994)
+  summarize( ... )    # Sum the baby counts by the group_by()
+
+# If your modifications were correct, you should be able to plot 
+the.plot <- ggplot(births, aes(x = year, y = sum) ) + 
+  geom_bar(stat = "identity") + # this will be a histogram
+  ggtitle(label = "Babies by weekday from 1994 to 2014") + # a title for the plot
+  facet_wrap(facets = ~weekday)
+ 
+# Spit out the plot
+the.plot
+```
+
+## Friday the 13th Babies
+
+Now that the data is in the right shape, we can try to replicate the finding of data scientists at fivethirtyeight.com that *fewer babies are born on Friday the 13th.* Build a shiny app that can show this finding.
+
+I have provided a sample solution, but expect there to be a wide variety of apps that can address this question. Good luck!
+
+## NEXT: MORE ABOUT USER INTERFACE CONTROLS
