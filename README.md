@@ -2,6 +2,8 @@
 
 This is an introduction to `shiny`, an `R` package that supports building web applications using `R` code. This makes it ideal for building interactive data visualizations.
 
+Check out some examples of shiny apps here: https://shiny.rstudio.com/gallery/#user-showcase
+
 The tutorial begins by reviewing the `tidyverse` with special attention paid to `ggplot2`. Then it breaks down the main components of a working app:
 
 * The first part is the **UI**, which takes some kind of user input and shows the user some kind of rendered output.
