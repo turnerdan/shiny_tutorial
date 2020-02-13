@@ -4,20 +4,23 @@ author: Dan Turner (dturner@u.northwestern.edu)
 updated: 2-7-19
 ---
 
+This script is all about how to put your shiny app online.
+
+
 ## Setup block
 ```{r setup}
 # Packages
-library('shiny')         # For building interactive apps
-#library('tidyverse')     # For tidy data wrangling, plotting, etc.
-#library('readr')         # For reading-in data
-library('rsconnect')     # For connecting RStudio to shinyapps.io
-# library(shinythemes)   # For easy visual theming
-# library(lme4)          # For statistical modeling (optional)
+library(shiny)         # For building interactive apps
+library(rsconnect)     # For connecting RStudio to shinyapps.io
+library(shinyBS)       # Optional: bootstrap the shiny app for mobile 
+library(shinyLP)       # Optional: easy landing pages for your shiny apps
 
 # Other setup
 null_server <- function(input, output) { } # Empty server to test different UIs with
 
 ```
+
+
 
 ##############################
 ## LAUNCHING YOUR SHINY APP ##
@@ -39,11 +42,22 @@ rsconnect::setAccountInfo(name='bias',              # the name of the account on
 			  secret='<SECRET>')                          # the secret for your token (like a password)
 
 # Push the current app to the shinyapps.io server, using the stored defaults
-deployApp(launch.browser = FALSE)
+deployApp(launch.browser = TRUE, # After deploying the app online, show it in the browser
+          appName = "My first shiny app") # I like to name my app this way. Otherwise, shiny uses the directory name as a default.
 ```
 			  
-#Once you have configured your rsconnect installation, you can use it to upload applications to shinyapps.io. If you are using the RStudio IDE, you can manage your shinyapps.io account by going to Tools -> Global Options -> Publishing.
+When you have rsconnect configured, you just need to use deployApp. It will take your shiny app (as "app.R", for example) and upload it to shinyapps.io to a server that's been preconfigured to run it. There are a lot of formulations that `deployApp()` can take, including splitting up your code as "ui.R" for the UI and "server.r" for the server. All formulations work the same, so it's up to you whether you want to keep your UI and server in the same R script or not.
 
 
-# deploy the app from the last example, but instead of the raw data it plots the model
 
+########################
+## ADD A LANDING PAGE ##
+########################
+
+I will end with a last tip on deploying your shiny app. Often, you will want to have information about the application, like a guide on how to use it, or where to find more information about the work being displayed. I recommend using the shinyLP package for this. you can see a working example with the one-liner below.
+
+```{r message=FALSE, warning=FALSE}
+shinyLP::runExample()
+```
+
+# Thank you!

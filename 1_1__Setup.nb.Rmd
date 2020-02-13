@@ -16,6 +16,7 @@ Code chunks are run by pressing the *Run* button while the curser is in that cod
 *Try it out with the code chunk below.*
 
 ```{r RUN THIS}
+library(tidyverse)
 songs <- read_csv("data/fight-songs.csv")  # Load a dataset
 plot( sort( songs$sec_duration ) )         # Plot in ascending order
 ```

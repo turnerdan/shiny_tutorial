@@ -6,20 +6,13 @@ updated: 2-7-19
 
 
 ## Let's get shiny!
-
-This notebook is all about the `shiny` workflow.
-
-It provides a general anatomy of shiny applications and a guide with best practices for building them.
-
-Let's start with an example of a simple app that takes and input (a name) and displays an output (a greeting).
+This notebook is all about the `shiny` workflow. It provides a general anatomy of shiny applications and a guide with best practices for building them.
 
 
 ## About the data
-
 This data contains the fight songs from some large American universitites, including Northwestern. Fight songs are a kind of song for fans at college games. It comes from fivethirtyeight.com: [Our Guide To The Exuberant Nonsense Of College Fight Songs](https://projects.fivethirtyeight.com/college-fight-song-lyrics/) from [here](https://github.com/fivethirtyeight/data/tree/master/fight-songs)
 
 Reminder: To run a chunk, click the *Run* button within the chunk or place your cursor inside it and pressing *Cmd+Shift+Enter*. 
-
 
 ## Setup block
 ```{r setup}
@@ -66,26 +59,21 @@ ui <- fluidPage(
   titlePanel("Fight Songs Visualization 1"),
   
   # selectInput() makes a dropdown menu and feeds the choice to the server. It needs:
-  #      an inputId (which will save it as input$inputId
-  #      a label that prints text over the dropdown
-  #      a vector of choies that will populate the menu
-  #      'selected' is optional, and is the default selection on the dropdown. Other input types require defaults, like sliderInput()
-  selectInput(inputId = "conf", 
-              label = "Select a conference", 
-              selected = "Big Ten", 
-              choices = unique(fight_songs$conference)),
+  selectInput(inputId = "conf", # an inputId (which will save it as input$inputId to make things interactive)
+              label = "Select a conference", # a label that prints text over the dropdown
+              selected = "Big Ten", # 'selected' is optional, and is the default selection on the dropdown. Other input types require defaults, like sliderInput()
+              choices = unique(fight_songs$conference)), # a vector of choies that will populate the menu
 
   # plotOutput displays a ggplot to the user, in this case the one saved to output$the.plot
   plotOutput("the.plot"),
   
   # Update the page (e.g. refresh the server with new input) when the user presses "Go"
   actionButton("update", "Go")
-  
 )
 
 ## The second half of every shiny app is the shiny server, which feeds data to the UI.
 
-# server is defined as a function that takes an input and displays an output.
+# server() is defined as a function that takes an input and displays an output.
 server <- function(input, output) {
 
   # We subset the data with dplyr and refresh it when the user presses the update button, "Go"
@@ -111,6 +99,10 @@ server <- function(input, output) {
 shinyApp(ui = ui, server = server)
 ```
 
+## To sum it up, shiny apps have three parts:
+* a UI that passes user inputs to the server and displays rendered data to the user
+* a server that handles the user input to render the data for the UI
+* a deployment command that links the UI and server
 
 ####################
 ## SHINY WORKFLOW ##
@@ -120,10 +112,10 @@ The general workflow for shiny creation is:
 
 1. Build the skeleton of the UI ("What are people going to see and input?")
 2. Build the skeleton of the server ("What are the building blocks of the output?")
-3. Adjust the layout of the UI
-4. Adjust the behavior of the server
+3. Adjust the layout of the UI ("How should the inputs and outputs look?")
+4. Adjust the behavior of the server ("How can I computationally optimize the reactive scripts?")
 
-Let's talk about each piece in turn.
+Let's talk about each piece in turn, with an emphasis on parts 1-3. 
 
 
 ##############
@@ -167,13 +159,13 @@ ui <- fluidPage(
             label = "checkboxInput",
             value = TRUE),
   
-  # There is also a checkboxGroupInput option, and a radioButtons option.
+  # There is also a checkboxGroupInput option, and a radioButtons option. You will see an example of this type of checkbox later.
   
   # Date input
   dateInput(inputId = "date", 
             label = "dateInput"),
   
-  # There is also a dateRangeInput option
+  # There is also a dateRangeInput option. It resembles every hotel booking website you've ever used.
     
   # File input
   fileInput(inputId = "file", 
@@ -183,7 +175,7 @@ ui <- fluidPage(
   # We will talk about the output next
   )
 
-shinyApp(ui = ui, server = server)
+shinyApp(ui = ui, server = server) # launch it
 ```
 
 
@@ -231,36 +223,32 @@ ui <- fluidPage(
   tableOutput("the.table"),
   
   # Data table (interactive)
-  HTML("Interactive (Data)Table<"),
+  HTML("Interactive (Data)Table"),
   DT::DTOutput("the.datatable")
   
 ) #/ui
 
-
-# server is defined as a function that takes an input and displays an output.
 server <- function(input, output) {
 
-  # renderPlot renders ggplots to the UI output variable
-  
   # First we make the ggplot, because we will reuse it in a moment
   gg <- ggplot(data = fight_songs, aes(x = year ), stat = "count") +   # special color for NU in the plot
       geom_bar() + # this will be a histogram
       ggtitle(label = "# Fight Songs Written by year") # a title for the plot
   
+  # renderPlot() renders ggplots to the UI output variable
   output$the.plot <- renderPlot({
     gg # the plot
     })
   
-    # Now let's do a data table
+  # Now let's make an interactive plot using renderPlotly()
   output$the.plotly <- renderPlotly({
     
     # Coerce fight_sounds into a leaflet
-    
     plot_ly(fight_songs, x = ~year,  type = "histogram")
     
   })
   
-  # renderTable renders a normal table to the UI output variable
+  # renderTable() renders a normal table to the UI output variable
   output$the.table <- renderTable({
     
     # Shiny requires it to be an xtable object
@@ -274,29 +262,32 @@ server <- function(input, output) {
     datatable(fight_songs)
   })
   
-  
-  
 } #/server
 
 shinyApp(ui = ui, server = server)
 
-
 ```
 
-
 While we are not working with any geographic information (at least not yet), we could also show *interactive map data* in shiny, using the package `leaflet`.
+
+
+
 
 ################################
 ## CODE IT ## STATIC DATA VIS ##
 ################################
 
-Your job in this exercise is to create a working shiny app. It should address a question that can be visualized using the data and functions mentioned thus far. For now, do not make it interactive; it should only have a title and outputs in the UI. Here are some sample questions -- CHOOSE ONE:
+Your job in this exercise is to create a working shiny app that just displays some data. It should address a question that can be visualized using the data and functions mentioned thus far. For now, do not make it interactive; it should only have a title and outputs in the UI. Here are some sample questions:
 
 A. What is the relationship to the count of "fight" and the song duration? How about BPM?
       Suggestion: A scatterplot comparing `$number_fights` and `$sec_duration` or `$bpm`.
       -Consider transforming `sec_duration` into log scale using `ggplot2::scale_y_log10()`.
 
-B. 
+B. Do the conferences differ systematically along any of the variables?
+C. Are there more or fewer tropes in student-written fight songs?
+
+After tackling one of these questions (or your own), go onto the reactive data visualization challenge below.
+
 
 
 ##################################
@@ -304,20 +295,19 @@ B.
 ##################################
 
 ## About this data (inspired by a story on fivethirtyeight)
-This dataset gives a daily breakdown of births in the US from 1994 to 2014. It comes from two agencies, the Social Security Administration and the Center for Disease Control, and so we have to separate files with redundant information. So, some assembly is required.
+This dataset gives a daily breakdown of births in the US from 1994 to 2014. It comes from two agencies, the Social Security Administration and the Center for Disease Control, and so we have to separate files with redundant information. So, some assembly is required. We are going to use this data to see whether there are different patterns for births on Friday the 13th.
 
-Below is most of the data wrangling needed for this app, but it needs a little bit of modification to work.
+Below is most of the data wrangling needed for this app, but it still needs a little bit of modification to work.
 
-Read the code and comments, and modify the code to pool birth numbers within each month and day ()
+**Read the code and comments, and modify the code to pool birth numbers within each month and day. If you get stuck, my sample solution should give you a boost.**
 
 ```{r BABY LUCK, message=FALSE, warning=FALSE, include=FALSE}
 
 # Import the CSV files with the raw data
-
 US_births_2000_2014_SSA <- read_csv("data/US_births_2000-2014_SSA.csv")
 US_births_1994_2003_CDC_NCHS <- read_csv("data/US_births_1994-2003_CDC_NCHS.csv")
 
-# INSTRUCTIONS: MODIFY "..." BELOW TO POOL BIRTHS ACROSS THE YEARS, SO WE HAVE THE BABY TOTAL BY MONTH AND DAY
+# YOUR TURN: MODIFY "..." BELOW TO POOL BIRTHS ACROSS THE YEARS, SO WE HAVE THE BABY TOTAL BY MONTH AND DAY
 
 # Set up our data frame with the combined data, without duplicate years
 births <- US_births_1994_2003_CDC_NCHS %>%   # Start with the older data
@@ -339,8 +329,10 @@ the.plot
 
 ## Friday the 13th Babies
 
-Now that the data is in the right shape, we can try to replicate the finding of data scientists at fivethirtyeight.com that *fewer babies are born on Friday the 13th.* Build a shiny app that can show this finding.
+Now that the data is in the right shape, we can try to replicate the finding of data scientists at fivethirtyeight.com that *fewer babies are born on Friday the 13th than Fridays of other days of the month.* 
+*Intermediate R Users:* Modify my sample solution (`...Reactive_Data_Vis.R`) to improve it.
+*Advanced R Users:* Build an original shiny app that can show this finding.
 
-I have provided a sample solution, but expect there to be a wide variety of apps that can address this question. Good luck!
+I have provided a sample solution, but I expect there to be a wide variety of apps that can address this question. Good luck!
 
 ## NEXT: MORE ABOUT USER INTERFACE CONTROLS

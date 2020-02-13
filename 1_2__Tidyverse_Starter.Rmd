@@ -1,10 +1,10 @@
 ---
-title: "1.2 Tidyverse Starter"
+title: "1.2 Brief Tidyverse Starter"
 author: Dan Turner (dturner@u.northwestern.edu)
 updated: 2-9-19
 ---
 
-Because of the way we will be filtering and plotting our data, it is advantageous to use `tidyverse` style R code, which looks a little different than "base" R code. Mainly, we want to use `magrittr`'s pipe operator, `>%>`, and `dplyr`'s functions tomanipulate the data based on user input.
+Because of the way we will be filtering and plotting our data, it is advantageous to use `tidyverse` style R code, which looks a little different than "base" R code. Mainly, we want to use `magrittr`'s pipe operator, `%>%`, and `dplyr`'s functions tomanipulate the data based on user input. 
 
 
 
@@ -26,6 +26,7 @@ tidyverse_sitrep()
 Quick tip: if any of the packages in `tidyverse` are out of date, you can run `tidyverse_update(recursive = TRUE)` to get a ready-to-go command to install all of the updates. This is probably not necesary for this turtorial, though.
 
 **In the next section, we review the Tidyverse packages**
+
 
 ## Tidyverse packages 
 
@@ -62,11 +63,12 @@ https://rawgit.com/rstudio/cheatsheets/master/lubridate.pdf
 
 See the full list here: https://www.tidyverse.org/packages/
 
+
 ## Quick tidyverse walkthrough
 
 Next we get some practice in the tidyverse in terms of data wrangling. In `data/` there are two files, `cats.csv` and `dogs.csv` which are public domain databases that contain characteristics about cat and dog breeds. We will try to follow the tidy data guidelines, which means to have all variables as columns, all observations as rows, and each cell should have one and only one value.
 
-**In the code chunk below, we load and merge these data using three dplyr functions/"verbs", 'mutate', 'rename' and 'full_join':**
+**In the code chunk below, we load and merge these data using three dplyr functions/"verbs", `mutate()`, `rename()` and `full_join()`:**
 
 ```{r IMPORT AND MERGE}
 # Import the cat datasets using readr as tibbles
@@ -98,9 +100,9 @@ head(pets, 5)
 * What could you do to make it tidy?
 
 
-**Next we will explore the data using three more dplyr verbs.**
+**Next we will try to answer some basic questions about our data using what we've learned so far.**
 
-Which animal is more expensive?
+Question 1: Which animal is more expensive, dogs or cats?
 ```{r GROUP AND SUMMARIZE}
 pets %>% # take the pets object
   group_by(animal) %>% # # group all rows accourding to their value in this column
@@ -108,43 +110,51 @@ pets %>% # take the pets object
             count = n()) # ...and second, by getting getting the count of rows in each group as 'count'
 ```
 
-Often you want to only include certain rows in your analysis, and so you have to filter out some rows based on their values. For this kind of task, you can use the verb 'filter':
+Often you want to only include certain rows in your analysis, and so you have to filter out some rows based on their values. For this kind of task, you can use the verb `filter()`:
 
+Question 2: What are the 3 most popular breeds of pet, ACROSS cats and dogs?
 ```{r FILTER 1 of 3}
-## What are the 3 most popular breeds of pet, ACROSS cats and dogs?
 pets %>% 
   filter(MaleWtKg >= 1) %>% # filter out any pets that do not meet this criteria
   top_n(3, PopularityUS2017) # get the top 3 most popular pets in the database
 ```
+
+Question 3: What are the 3 most popular breeds of pet, WITHIN cats and dogs?
 ```{r FILTER 2 of 3}
-## What are the 3 most popular breeds of pet, WITHIN cats and dogs?
 pets %>% 
   filter(MaleWtKg >= 1) %>% # filter out any pets that do not meet this criteria
   group_by(animal) %>% # group cats with cats and dogs with dogs 
   top_n(3, PopularityUS2017) # get the top 3 most popular from each group
 ```
 
-You can subset columns using the "select" verb:
-
-```{r SELECT}
-pets %>% select(price, PopularityUS2017) # This will select only the Fur column
-```
-
+Question 4: What are the most popular cats and dogs, in terms of percentile?
 ```{r FILTER 3 of 3}
-## What are the most popular cats and dogs, in terms of percentile?
 pets %>% 
   filter(MaleWtKg >= 1) %>% # filter out any pets that do not meet this criteria
   group_by(animal) %>% # group cats with cats and dogs with dogs 
   top_frac(.05, PopularityUS2017) # get the top 5% most popular 
 ```
 
-Great! Let's write this new dataset 
+What if you don't want all of the columns in the result? You can subset columns using the `select()` verb:
+
+```{r SELECT}
+pets %>% 
+  filter(MaleWtKg >= 1) %>% # filter out any pets that do not meet this criteria (same as above)
+  group_by(animal) %>% # group cats with cats and dogs with dogs(same as above)
+  top_frac(.05, PopularityUS2017)  %>%  # get the top 5% most popular  (same as above)
+  select(price, PopularityUS2017) # This will subset the columns to these, (plus the grouping column 'animal', by default)
+```
+
+There are a few more questions I came up with. See if you can use the commands we've used so far to address them.
+
 
 #######################
 ## CODE IT TIDYVERSE ##
 #######################
 
-What is the price of the most popular dog smaller than a lapcat?
+Do your best to answer the questions below. If you get stuck, check the solution in the root directory, `...solution__Tidyverse.R`. If these are not challenging enough for you, feel free to try more advancing grouping and summarizing. I'm interested to see what you do with this dat!
+
+Challenge A: What is the price of the most popular dog smaller than a lapcat?
 ```{r}
 
 pets %>% 
@@ -152,8 +162,7 @@ pets %>%
 
 ```
 
-Make a table showing the average price of cat by fur type (bald, shorthair, medium, longhair).
-
+Challenge B: Make a table showing the average price of cat by fur type (bald, shorthair, medium, longhair).
 ```{r}
 
 pets %>% 

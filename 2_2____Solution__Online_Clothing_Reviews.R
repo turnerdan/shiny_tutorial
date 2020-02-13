@@ -57,7 +57,7 @@ ui <- fluidPage(
       
       checkboxGroupInput(inputId = "class", label = "What class?",
                          choices = unique(reviews.grouped$Class.Name),
-                         selected = unique(reviews.grouped$Class.Name))   # Autopopulate the choices
+                         selected = unique(reviews.grouped$Class.Name)),   # Autopopulate the choices
     
       # Update the page
       actionButton("update", "Update")

@@ -19,13 +19,14 @@ births <- US_births_1994_2003_CDC_NCHS %>%   # Start with the older data
   filter( year < 2000 ) %>%                  # Subtract duplicate years from smaller set
   bind_rows( US_births_2000_2014_SSA ) %>%   # Append the later data
   mutate( weekday = weekdays( as.Date( paste0( year, "-", month, "-", date_of_month ) ) ) )  %>% # Weekday name (i.e. Sunday)
-  group_by(year, weekday, date_of_month) %>% # Pool across the months
+  group_by(year, weekday, date_of_month) %>% # Pool across the months, days, and years
   summarize(sum = sum(births))               # Sum each day of each month
+
+
 
 ###############
 ## SHINY APP ##
 ###############
-
 
 # USER SIDE
 ui <- fluidPage(
